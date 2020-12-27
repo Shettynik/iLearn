@@ -1,3 +1,4 @@
+require("dotenv").config();
 const express = require("express");
 const bodyParser = require("body-parser");
 const courses = require("./courses.json");
@@ -74,6 +75,10 @@ app.get("/dashboard", (req, res) => {
     }
 });
 
+app.get("/forgotPassword",(req, res)=>{
+    res.render("forgotPassword",{message: message});
+});
+
 app.get("/logout",(req, res)=>{
     req.session.destroy((err)=>{
         if(!err){
@@ -140,6 +145,37 @@ app.post("/dashboard", (req, res) => {
                 res.redirect("/dashboard");
                 console.log("The course has already been added to your bucket");
             }
+        }
+    })
+});
+
+app.post("/forgotPassword",(req, res)=>{
+    var email = req.body.email;
+    var password = req.body.password;
+    var confirmPass = req.body.confirmPass;
+    mysqlConnection.query("SELECT * FROM accounts WHERE email=?",[email],(err,results,field)=>{
+        if(!err){
+            if(results.length>0){
+                if(password==confirmPass){
+                    mysqlConnection.query("UPDATE Users SET password = ? WHERE email = ?",[hash,email],(err,results,fiels)=>{
+                        if(!err){
+                            res.render("login",{message:"Password is set successfully. Login again"});
+                            console.log("Password set successfully !!");
+                        }
+                        else{
+                            console.log(err);
+                            console.log("Failed");
+                        }
+                    })
+                }else{
+                    res.render("forgotPassword",{message:"Confirm pasword does not match"});
+                }
+            }else{
+                res.render("forgotPassword",{message:"You have entered an incorrect email id"});
+            }
+        }else{
+            console.log(err);
+            console.log("Failed")
         }
     })
 });
